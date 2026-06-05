@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace VContainer.Internal
 {
-    sealed class CompositeDisposable : IDisposable
+    sealed partial class CompositeDisposable : IDisposable
     {
         readonly Stack<IDisposable> disposables = new Stack<IDisposable>();
 

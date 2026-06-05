@@ -1,8 +1,8 @@
 {
-  "name": "jp.hadashikick.vcontainer",
-  "displayName": "VContainer",
-  "version": "1.18.0",
-  "unity": "2018.4",
+  "name": "io.github.idreamsofgame.vcontainerplus",
+  "displayName": "VContainerPlus",
+  "version": "1.18.0-patch.1",
+  "unity": "2022.3",
   "description": "The extra fast DI (Dependency Injection) for Unity",
   "keywords": ["DI", "Dependency Injection", "DI Container"],
   "license": "MIT",

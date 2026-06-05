@@ -53,7 +53,7 @@ namespace VContainer.Internal
             }
             catch (VContainerException ex)
             {
-                throw new VContainerException(ex.InvalidType, $"Failed to resolve {injectTypeInfo.Type} : {ex.Message}");
+                throw new VContainerException(ex.InvalidType, $"Failed to resolve {injectTypeInfo.Type} : {ex.StackTrace}");
             }
             finally
             {

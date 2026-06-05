@@ -21,12 +21,12 @@ namespace VContainer
         bool Exists(Type type, bool includeInterfaceTypes = false, bool findParentScopes = false);
     }
 
-    public sealed class ScopedContainerBuilder : ContainerBuilder
+    public sealed partial class ScopedContainerBuilder : ContainerBuilder
     {
         readonly IObjectResolver root;
         readonly IScopedObjectResolver parent;
 
-        internal ScopedContainerBuilder(IObjectResolver root, IScopedObjectResolver parent)
+        public ScopedContainerBuilder(IObjectResolver root, IScopedObjectResolver parent)
         {
             this.root = root;
             this.parent = parent;
@@ -71,7 +71,7 @@ namespace VContainer
         }
     }
 
-    public class ContainerBuilder : IContainerBuilder
+    public partial class ContainerBuilder : IContainerBuilder
     {
         public object ApplicationOrigin { get; set; }
 

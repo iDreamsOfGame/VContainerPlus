@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using VContainer.Diagnostics;
 using VContainer.Internal;
 
 namespace VContainer
 {
-    public interface IObjectResolver : IDisposable
+    public partial interface IObjectResolver : IDisposable
     {
         object ApplicationOrigin { get; }
         DiagnosticsCollector Diagnostics { get; set; }
@@ -45,7 +46,7 @@ namespace VContainer
     public interface IScopedObjectResolver : IObjectResolver
     {
         IObjectResolver Root { get; }
-        IScopedObjectResolver Parent { get; }
+        IScopedObjectResolver Parent { get; set; }
     }
 
     public enum Lifetime
@@ -55,32 +56,28 @@ namespace VContainer
         Scoped
     }
 
-    public sealed class ScopedContainer : IScopedObjectResolver
+    public sealed partial class ScopedContainer : IScopedObjectResolver
     {
         public IObjectResolver Root { get; }
-        public IScopedObjectResolver Parent { get; }
+        public IScopedObjectResolver Parent { get; set; }
         public object ApplicationOrigin { get; }
         public DiagnosticsCollector Diagnostics { get; set; }
 
         readonly Registry registry;
-        readonly ConcurrentDictionary<Registration, Lazy<object>> sharedInstances = new ConcurrentDictionary<Registration, Lazy<object>>();
-        readonly CompositeDisposable disposables = new CompositeDisposable();
-        readonly Func<Registration, Lazy<object>> createInstance;
+        readonly ConcurrentDictionary<Registration, object> sharedInstances;
 
         internal ScopedContainer(
             Registry registry,
             IObjectResolver root,
             IScopedObjectResolver parent = null,
-            object applicationOrigin = null)
+            object applicationOrigin = null,
+            ConcurrentDictionary<Registration, object> sharedInstances = null)
         {
             Root = root;
             Parent = parent;
             ApplicationOrigin = applicationOrigin;
             this.registry = registry;
-            createInstance = registration =>
-            {
-                return new Lazy<object>(() => registration.SpawnInstance(this));
-            };
+            this.sharedInstances = sharedInstances ?? new ConcurrentDictionary<Registration, object>();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -90,9 +87,14 @@ namespace VContainer
             {
                 return Resolve(registration);
             }
-            throw new VContainerException(type, $"No such registration of type: {type}{(key == null ? string.Empty : $" with Key: {key}")}");
+            
+            if (ThrowIfUnresolved)
+                throw new VContainerException(type, $"No such registration of type: {type}{(key == null ? string.Empty : $" with Key: {key}")}");
+
+            return null;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryResolve(Type type, out object resolved, object key = null)
         {
             if (TryFindRegistration(type, key, out var registration))
@@ -144,7 +146,6 @@ namespace VContainer
             {
                 Diagnostics.Clear();
             }
-            disposables.Dispose();
             sharedInstances.Clear();
         }
 
@@ -173,13 +174,12 @@ namespace VContainer
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         object CreateTrackedInstance(Registration registration)
         {
-            var lazy = sharedInstances.GetOrAdd(registration, createInstance);
-            var created = lazy.IsValueCreated;
-            var instance = lazy.Value;
-            if (!created && instance is IDisposable disposable && !(registration.Provider is ExistingInstanceProvider))
+            if (!sharedInstances.TryGetValue(registration, out var instance))
             {
-                disposables.Add(disposable);
+                instance = registration.SpawnInstance(this);
+                sharedInstances.TryAdd(registration, instance);
             }
+
             return instance;
         }
 
@@ -201,27 +201,21 @@ namespace VContainer
         }
     }
 
-    public sealed class Container : IObjectResolver
+    public sealed partial class Container : IObjectResolver
     {
         public object ApplicationOrigin { get; }
         public DiagnosticsCollector Diagnostics { get; set; }
 
         readonly Registry registry;
         readonly IScopedObjectResolver rootScope;
-        readonly ConcurrentDictionary<Registration, Lazy<object>> sharedInstances = new ConcurrentDictionary<Registration, Lazy<object>>();
-        readonly CompositeDisposable disposables = new CompositeDisposable();
-        readonly Func<Registration, Lazy<object>> createInstance;
 
-        internal Container(Registry registry, object applicationOrigin = null)
+        readonly ConcurrentDictionary<Registration, object> sharedInstances;
+
+        internal Container(Registry registry, object applicationOrigin = null, ConcurrentDictionary<Registration, object> sharedInstances = null)
         {
             this.registry = registry;
+            this.sharedInstances = sharedInstances ?? new ConcurrentDictionary<Registration, object>();
             rootScope = new ScopedContainer(registry, this, applicationOrigin: applicationOrigin);
-
-            createInstance = registration =>
-            {
-                return new Lazy<object>(() => registration.SpawnInstance(this));
-            };
-
             ApplicationOrigin = applicationOrigin;
         }
 
@@ -232,7 +226,11 @@ namespace VContainer
             {
                 return Resolve(registration);
             }
-            throw new VContainerException(type, $"No such registration of type: {type}{(key == null ? string.Empty : $" with Key: {key}")}");
+            
+            if (ThrowIfUnresolved)
+                throw new VContainerException(type, $"No such registration of type: {type}{(key == null ? string.Empty : $" with Key: {key}")}");
+
+            return null;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -281,7 +279,6 @@ namespace VContainer
                 Diagnostics.Clear();
             }
             rootScope.Dispose();
-            disposables.Dispose();
             sharedInstances.Clear();
         }
 
@@ -291,12 +288,13 @@ namespace VContainer
             switch (registration.Lifetime)
             {
                 case Lifetime.Singleton:
-                    var singleton = sharedInstances.GetOrAdd(registration, createInstance);
-                    if (!singleton.IsValueCreated && singleton.Value is IDisposable disposable && !(registration.Provider is ExistingInstanceProvider))
+                    if (!sharedInstances.TryGetValue(registration, out var singleton))
                     {
-                        disposables.Add(disposable);
+                        singleton = registration.SpawnInstance(this);
+                        sharedInstances.TryAdd(registration, singleton);
                     }
-                    return singleton.Value;
+                    
+                    return singleton;
 
                 case Lifetime.Scoped:
                     return rootScope.Resolve(registration);
