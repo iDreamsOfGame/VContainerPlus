@@ -9,7 +9,6 @@ namespace VContainer.Internal
         public static readonly CappedArrayPool<T> Shared8Limit = new CappedArrayPool<T>(8);
 
         readonly T[][][] buckets;
-        readonly object syncRoot = new object();
         readonly int[] tails;
 
         internal CappedArrayPool(int maxLength)
@@ -37,26 +36,18 @@ namespace VContainer.Internal
                 return new T[length]; // Not supported
 
             var i = length - 1;
-
-            lock (syncRoot)
+            var bucket = buckets[i];
+            var tail = tails[i];
+            if (tail >= bucket.Length)
             {
-                var bucket = buckets[i];
-                var tail = tails[i];
-                if (tail >= bucket.Length)
-                {
-                    Array.Resize(ref bucket, bucket.Length * 2);
-                    buckets[i] = bucket;
-                }
-
-                if (bucket[tail] == null)
-                {
-                    bucket[tail] = new T[length];
-                }
-
-                var result = bucket[tail];
-                tails[i] += 1;
-                return result;
+                Array.Resize(ref bucket, bucket.Length * 2);
+                buckets[i] = bucket;
             }
+
+            bucket[tail] ??= new T[length];
+            var result = bucket[tail];
+            tails[i] += 1;
+            return result;
         }
 
         public void Return(T[] array)
@@ -65,12 +56,9 @@ namespace VContainer.Internal
                 return;
 
             var i = array.Length - 1;
-            lock (syncRoot)
-            {
-                Array.Clear(array, 0, array.Length);
-                if (tails[i] > 0)
-                    tails[i] -= 1;
-            }
+            Array.Clear(array, 0, array.Length);
+            if (tails[i] > 0)
+                tails[i] -= 1;
         }
     }
 }

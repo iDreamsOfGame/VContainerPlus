@@ -33,15 +33,12 @@ namespace VContainer.Internal
         /// <returns></returns>
         internal static List<T> Get()
         {
-            lock (_pool)
+            if (_pool.Count == 0)
             {
-                if (_pool.Count == 0)
-                {
-                    return new List<T>(DefaultCapacity);
-                }
-
-                return _pool.Pop();
+                return new List<T>(DefaultCapacity);
             }
+
+            return _pool.Pop();
         }
 
         /// <summary>
@@ -62,10 +59,7 @@ namespace VContainer.Internal
         internal static void Release(List<T> buffer)
         {
             buffer.Clear();
-            lock (_pool)
-            {
-                _pool.Push(buffer);
-            }
+            _pool.Push(buffer);
         }
     }
 }

@@ -13,12 +13,7 @@ namespace VContainer.Internal
             IDisposable disposable;
             do
             {
-                lock (disposables)
-                {
-                    disposable = disposables.Count > 0
-                        ? disposables.Pop()
-                        : null;
-                }
+                disposable = disposables.Count > 0 ? disposables.Pop() : null;
                 disposable?.Dispose();
             } while (disposable != null);
         }
@@ -26,10 +21,7 @@ namespace VContainer.Internal
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Add(IDisposable disposable)
         {
-            lock (disposables)
-            {
-                disposables.Push(disposable);
-            }
+            disposables.Push(disposable);
         }
     }
 }

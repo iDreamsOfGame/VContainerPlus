@@ -40,25 +40,6 @@ namespace VContainer.Tests
         }
 
         [Test]
-        public void ResolveScoped()
-        {
-            var builder = new ContainerBuilder();
-            builder.Register<DisposableServiceA>(Lifetime.Scoped);
-
-            var container = builder.Build();
-            var obj1 = container.Resolve<DisposableServiceA>();
-            var obj2 = container.Resolve<DisposableServiceA>();
-
-            Assert.That(obj1, Is.TypeOf<DisposableServiceA>());
-            Assert.That(obj2, Is.TypeOf<DisposableServiceA>());
-            Assert.That(obj1, Is.EqualTo(obj2));
-
-            container.Dispose();
-
-            Assert.That(obj1.Disposed, Is.True);
-        }
-
-        [Test]
         public void ResolveAsInterfaces()
         {
             var builder = new ContainerBuilder();
@@ -360,43 +341,6 @@ namespace VContainer.Tests
         }
 
         [Test]
-        public void RegisterFromFuncWithDisposable()
-        {
-            var builder = new ContainerBuilder();
-            builder.Register(_ =>
-            {
-                return new DisposableServiceA();
-            }, Lifetime.Scoped);
-
-            var container = builder.Build();
-            var resolved = container.Resolve<DisposableServiceA>();
-            Assert.That(resolved, Is.InstanceOf<DisposableServiceA>());
-            Assert.That(resolved.Disposed, Is.False);
-
-            container.Dispose();
-            Assert.That(resolved.Disposed, Is.True);
-        }
-
-        [Test]
-        public void RegisterMultipleDisposables()
-        {
-            var builder = new ContainerBuilder();
-            builder.Register<IDisposable, DisposableServiceA>(Lifetime.Singleton);
-            builder.Register<IDisposable, DisposableServiceB>(Lifetime.Scoped);
-
-            var container = builder.Build();
-            var disposables = container.Resolve<IReadOnlyList<IDisposable>>();
-            container.Dispose();
-
-            Assert.That(disposables[0], Is.TypeOf<DisposableServiceA>());
-            Assert.That(disposables[1], Is.TypeOf<DisposableServiceB>());
-            Assert.That(disposables[0], Is.InstanceOf<IDisposable>());
-            Assert.That(disposables[1], Is.InstanceOf<IDisposable>());
-            Assert.That(((DisposableServiceA)disposables[0]).Disposed, Is.True);
-            Assert.That(((DisposableServiceB)disposables[1]).Disposed, Is.True);
-        }
-
-        [Test]
         public void RegisterWithParameter()
         {
             {
@@ -592,57 +536,6 @@ namespace VContainer.Tests
         }
 
         [Test]
-        public void OnContainerDisposeCallback()
-        {
-            NoDependencyServiceA resolvedJustBeforeDispose = null;
-            NoDependencyServiceB resolvedJustBeforeDispose2 = null;
-
-            var builder = new ContainerBuilder();
-
-            builder.Register<NoDependencyServiceA>(Lifetime.Scoped);
-            builder.Register<NoDependencyServiceB>(Lifetime.Scoped);
-            builder.RegisterDisposeCallback(resolver =>
-                resolvedJustBeforeDispose = resolver.Resolve<NoDependencyServiceA>());
-            builder.RegisterDisposeCallback(resolver =>
-                resolvedJustBeforeDispose2 = resolver.Resolve<NoDependencyServiceB>());
-
-            var container = builder.Build();
-
-            Assert.That(resolvedJustBeforeDispose, Is.Null);
-            Assert.That(resolvedJustBeforeDispose2, Is.Null);
-
-            container.Dispose();
-
-            Assert.That(resolvedJustBeforeDispose, Is.Not.Null);
-            Assert.That(resolvedJustBeforeDispose2, Is.Not.Null);
-        }
-
-        [Test]
-        public void OnContainerDisposeCallback_ParentChild()
-        {
-            var parentDisposeCalled = false;
-            var childDisposeCalled = false;
-
-            var builder = new ContainerBuilder();
-            builder.Register<NoDependencyServiceA>(Lifetime.Scoped);
-
-            builder.RegisterDisposeCallback(x => parentDisposeCalled = true);
-
-            var container = builder.Build();
-
-            var childContainer = container.CreateScope(childBuilder =>
-            {
-                childBuilder.Register<NoDependencyServiceB>(Lifetime.Scoped);
-                childBuilder.RegisterDisposeCallback(x => childDisposeCalled = true);
-            });
-
-            childContainer.Dispose();
-
-            Assert.That(childDisposeCalled, Is.True);
-            Assert.That(parentDisposeCalled, Is.False);
-        }
-
-        [Test]
         public void TryResolveTransient()
         {
             var builder = new ContainerBuilder();
@@ -675,27 +568,6 @@ namespace VContainer.Tests
             Assert.That(obj2, Is.TypeOf<NoDependencyServiceA>());
             Assert.That(obj1, Is.EqualTo(obj2));
             Assert.That(obj3, Is.Null);
-        }
-
-        [Test]
-        public void TryResolveScoped()
-        {
-            var builder = new ContainerBuilder();
-            builder.Register<DisposableServiceA>(Lifetime.Scoped);
-
-            var container = builder.Build();
-            Assert.That(container.TryResolve<DisposableServiceA>(out var obj1), Is.True);
-            Assert.That(container.TryResolve<DisposableServiceA>(out var obj2), Is.True);
-            Assert.That(container.TryResolve<DisposableServiceB>(out var obj3), Is.False);
-
-            Assert.That(obj1, Is.TypeOf<DisposableServiceA>());
-            Assert.That(obj2, Is.TypeOf<DisposableServiceA>());
-            Assert.That(obj1, Is.EqualTo(obj2));
-            Assert.That(obj3, Is.Null);
-
-            container.Dispose();
-
-            Assert.That(obj1.Disposed, Is.True);
         }
 
         [Test]

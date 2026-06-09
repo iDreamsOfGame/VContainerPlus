@@ -11,8 +11,7 @@ namespace VContainer.Internal
     {
         public bool IsDisposed => lastIndex == -2;
         public int Length => lastIndex + 1;
-
-        readonly object gate = new object();
+        
         T[] values;
         int lastIndex = -1;
 
@@ -36,69 +35,60 @@ namespace VContainer.Internal
 
         public void Add(T item)
         {
-            lock (gate)
+            CheckDispose();
+
+            // try find blank
+            var index = FindNullIndex(values);
+            if (index == -1)
             {
-                CheckDispose();
+                // full, 1, 4, 6,...resize(x1.5)
+                var len = values.Length;
+                var newValues = new T[len + len / 2];
+                Array.Copy(values, newValues, len);
+                values = newValues;
+                index = len;
+            }
 
-                // try find blank
-                var index = FindNullIndex(values);
-                if (index == -1)
-                {
-                    // full, 1, 4, 6,...resize(x1.5)
-                    var len = values.Length;
-                    var newValues = new T[len + len / 2];
-                    Array.Copy(values, newValues, len);
-                    values = newValues;
-                    index = len;
-                }
-
-                values[index] = item;
-                if (lastIndex < index)
-                {
-                    lastIndex = index;
-                }
+            values[index] = item;
+            if (lastIndex < index)
+            {
+                lastIndex = index;
             }
         }
 
         public void RemoveAt(int index)
         {
-            lock (gate)
+            if (index < values.Length)
             {
-                if (index < values.Length)
-                {
-                    ref var v = ref values[index];
-                    if (v == null) throw new KeyNotFoundException($"key index {index} is not found.");
+                ref var v = ref values[index];
+                if (v == null) throw new KeyNotFoundException($"key index {index} is not found.");
 
-                    v = null;
-                    if (index == lastIndex)
-                    {
-                        lastIndex = FindLastNonNullIndex(values, index);
-                    }
+                v = null;
+                if (index == lastIndex)
+                {
+                    lastIndex = FindLastNonNullIndex(values, index);
                 }
             }
         }
 
         public bool Remove(T value)
         {
-            lock (gate)
+            if (lastIndex < 0) return false;
+
+            var index = -1;
+            for (var i = 0; i < values.Length; i++)
             {
-                if (lastIndex < 0) return false;
-
-                var index = -1;
-                for (var i = 0; i < values.Length; i++)
+                if (values[i] == value)
                 {
-                    if (values[i] == value)
-                    {
-                        index = i;
-                        break;
-                    }
+                    index = i;
+                    break;
                 }
+            }
 
-                if (index != -1)
-                {
-                    RemoveAt(index);
-                    return true;
-                }
+            if (index != -1)
+            {
+                RemoveAt(index);
+                return true;
             }
 
             return false;
@@ -106,22 +96,16 @@ namespace VContainer.Internal
 
         public void Clear()
         {
-            lock (gate)
+            if (lastIndex > 0)
             {
-                if (lastIndex > 0)
-                {
-                    Array.Clear(values, 0, lastIndex + 1);
-                    lastIndex = -1;
-                }
+                Array.Clear(values, 0, lastIndex + 1);
+                lastIndex = -1;
             }
         }
 
         public void Dispose()
         {
-            lock (gate)
-            {
-                lastIndex = -2; // -2 is disposed.
-            }
+            lastIndex = -2; // -2 is disposed.
         }
 
         void CheckDispose()

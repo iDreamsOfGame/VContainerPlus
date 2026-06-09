@@ -4,10 +4,7 @@ namespace VContainer.Internal
     {
         public void Clear()
         {
-            lock (disposables)
-            {
-                disposables.Clear();
-            }
+            disposables.Clear();
         }
     }
 }
