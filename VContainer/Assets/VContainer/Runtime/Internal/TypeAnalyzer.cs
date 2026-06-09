@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -208,7 +207,7 @@ namespace VContainer.Internal
     {
         public static InjectTypeInfo AnalyzeWithCache(Type type) => Cache.GetOrAdd(type, AnalyzeFunc);
 
-        static readonly ConcurrentDictionary<Type, InjectTypeInfo> Cache = new ConcurrentDictionary<Type, InjectTypeInfo>();
+        static readonly Dictionary<Type, InjectTypeInfo> Cache = new();
 
         [ThreadStatic]
         static Stack<DependencyInfo> circularDependencyChecker;

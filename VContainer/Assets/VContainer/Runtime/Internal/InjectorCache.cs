@@ -1,12 +1,12 @@
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Reflection;
 
 namespace VContainer.Internal
 {
     public static class InjectorCache
     {
-        static readonly ConcurrentDictionary<Type, IInjector> Injectors = new ConcurrentDictionary<Type, IInjector>();
+        static readonly Dictionary<Type, IInjector> Injectors = new();
 
         public static IInjector GetOrBuild(Type type)
         {

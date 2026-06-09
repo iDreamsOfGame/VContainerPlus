@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace VContainer.Internal
@@ -53,7 +52,7 @@ namespace VContainer.Internal
         readonly Type implementationType;
         readonly IReadOnlyList<IInjectParameter> customParameters;
 
-        readonly ConcurrentDictionary<TypeParametersKey, Registration> constructedRegistrations = new ConcurrentDictionary<TypeParametersKey, Registration>();
+        readonly Dictionary<TypeParametersKey, Registration> constructedRegistrations = new();
         readonly Func<TypeParametersKey, Registration> createRegistrationFunc;
 
         public OpenGenericInstanceProvider(Type implementationType, Lifetime lifetime, List<IInjectParameter> injectParameters)

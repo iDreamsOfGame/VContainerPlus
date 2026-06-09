@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 // ReSharper disable ConvertToAutoProperty
 
@@ -6,21 +6,21 @@ namespace VContainer
 {
     public partial interface IObjectResolver
     {
-        ConcurrentDictionary<Registration, object> SharedInstances { get; }
+        Dictionary<Registration, object> SharedInstances { get; }
 
         bool ThrowIfUnresolved { get; set; }
     }
 
     public sealed partial class ScopedContainer
     {
-        public ConcurrentDictionary<Registration, object> SharedInstances => sharedInstances;
+        public Dictionary<Registration, object> SharedInstances => sharedInstances;
 
         public bool ThrowIfUnresolved { get; set; } = true;
     }
 
     public sealed partial class Container
     {
-        public ConcurrentDictionary<Registration, object> SharedInstances => sharedInstances;
+        public Dictionary<Registration, object> SharedInstances => sharedInstances;
         
         public bool ThrowIfUnresolved { get; set; } = true;
         

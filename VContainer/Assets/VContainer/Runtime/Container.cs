@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using VContainer.Diagnostics;
 using VContainer.Internal;
 
@@ -64,20 +63,20 @@ namespace VContainer
         public DiagnosticsCollector Diagnostics { get; set; }
 
         readonly Registry registry;
-        readonly ConcurrentDictionary<Registration, object> sharedInstances;
+        readonly Dictionary<Registration, object> sharedInstances;
 
         internal ScopedContainer(
             Registry registry,
             IObjectResolver root,
             IScopedObjectResolver parent = null,
             object applicationOrigin = null,
-            ConcurrentDictionary<Registration, object> sharedInstances = null)
+            Dictionary<Registration, object> sharedInstances = null)
         {
             Root = root;
             Parent = parent;
             ApplicationOrigin = applicationOrigin;
             this.registry = registry;
-            this.sharedInstances = sharedInstances ?? new ConcurrentDictionary<Registration, object>();
+            this.sharedInstances = sharedInstances ?? new Dictionary<Registration, object>();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -209,12 +208,12 @@ namespace VContainer
         readonly Registry registry;
         readonly IScopedObjectResolver rootScope;
 
-        readonly ConcurrentDictionary<Registration, object> sharedInstances;
+        readonly Dictionary<Registration, object> sharedInstances;
 
-        internal Container(Registry registry, object applicationOrigin = null, ConcurrentDictionary<Registration, object> sharedInstances = null)
+        internal Container(Registry registry, object applicationOrigin = null, Dictionary<Registration, object> sharedInstances = null)
         {
             this.registry = registry;
-            this.sharedInstances = sharedInstances ?? new ConcurrentDictionary<Registration, object>();
+            this.sharedInstances = sharedInstances ?? new Dictionary<Registration, object>();
             rootScope = new ScopedContainer(registry, this, applicationOrigin: applicationOrigin);
             ApplicationOrigin = applicationOrigin;
         }
