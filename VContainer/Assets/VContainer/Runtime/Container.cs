@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using VContainer.Diagnostics;
 using VContainer.Internal;
 
 namespace VContainer
@@ -9,8 +8,7 @@ namespace VContainer
     public partial interface IObjectResolver : IDisposable
     {
         object ApplicationOrigin { get; }
-        DiagnosticsCollector Diagnostics { get; set; }
-
+        
         /// <summary>
         /// Resolve from type with or without key
         /// </summary>
@@ -60,7 +58,6 @@ namespace VContainer
         public IObjectResolver Root { get; }
         public IScopedObjectResolver Parent { get; set; }
         public object ApplicationOrigin { get; }
-        public DiagnosticsCollector Diagnostics { get; set; }
 
         readonly Registry registry;
         readonly Dictionary<Registration, object> sharedInstances;
@@ -107,14 +104,7 @@ namespace VContainer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public object Resolve(Registration registration)
-        {
-            if (Diagnostics != null)
-            {
-                return Diagnostics.TraceResolve(registration, ResolveCore);
-            }
-            return ResolveCore(registration);
-        }
+        public object Resolve(Registration registration) => ResolveCore(registration);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IScopedObjectResolver CreateScope(Action<IContainerBuilder> installation = null)
@@ -141,10 +131,6 @@ namespace VContainer
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Dispose()
         {
-            if (Diagnostics != null)
-            {
-                Diagnostics.Clear();
-            }
             sharedInstances.Clear();
         }
 
@@ -203,7 +189,6 @@ namespace VContainer
     public sealed partial class Container : IObjectResolver
     {
         public object ApplicationOrigin { get; }
-        public DiagnosticsCollector Diagnostics { get; set; }
 
         readonly Registry registry;
         readonly IScopedObjectResolver rootScope;
@@ -246,14 +231,7 @@ namespace VContainer
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public object Resolve(Registration registration)
-        {
-            if (Diagnostics != null)
-            {
-                return Diagnostics.TraceResolve(registration, ResolveCore);
-            }
-            return ResolveCore(registration);
-        }
+        public object Resolve(Registration registration) => ResolveCore(registration);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IScopedObjectResolver CreateScope(Action<IContainerBuilder> installation = null)
@@ -273,10 +251,6 @@ namespace VContainer
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Dispose()
         {
-            if (Diagnostics != null)
-            {
-                Diagnostics.Clear();
-            }
             rootScope.Dispose();
             sharedInstances.Clear();
         }

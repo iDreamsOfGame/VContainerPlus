@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using VContainer.Diagnostics;
 using VContainer.Internal;
 #if VCONTAINER_PARALLEL_CONTAINER_BUILD
 using System.Threading.Tasks;
@@ -12,7 +11,6 @@ namespace VContainer
     public interface IContainerBuilder
     {
         object ApplicationOrigin { get; set; }
-        DiagnosticsCollector Diagnostics { get; set; }
         int Count { get; }
         RegistrationBuilder this[int index] { get; set; }
 
@@ -37,7 +35,6 @@ namespace VContainer
         {
             var registry = BuildRegistry();
             var container = new ScopedContainer(registry, root, parent, ApplicationOrigin);
-            container.Diagnostics = Diagnostics;
             EmitCallbacks(container);
             return container;
         }
@@ -83,25 +80,13 @@ namespace VContainer
             set => registrationBuilders[index] = value;
         }
 
-        public DiagnosticsCollector Diagnostics
-        {
-            get => diagnostics;
-            set
-            {
-                diagnostics = value;
-                diagnostics?.Clear();
-            }
-        }
-
         readonly List<RegistrationBuilder> registrationBuilders = new List<RegistrationBuilder>();
         Action<IObjectResolver> buildCallback;
-        DiagnosticsCollector diagnostics;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Register<T>(T registrationBuilder) where T : RegistrationBuilder
         {
             registrationBuilders.Add(registrationBuilder);
-            Diagnostics?.TraceRegister(new RegisterInfo(registrationBuilder));
             return registrationBuilder;
         }
 
@@ -130,7 +115,6 @@ namespace VContainer
         {
             var registry = BuildRegistry();
             var container = new Container(registry, ApplicationOrigin);
-            container.Diagnostics = Diagnostics;
             EmitCallbacks(container);
             return container;
         }
@@ -145,7 +129,6 @@ namespace VContainer
             {
                 var registrationBuilder = registrationBuilders[i];
                 var registration = registrationBuilder.Build();
-                Diagnostics?.TraceBuild(registrationBuilder, registration);
                 registrations[i] = registration;
             });
 #else
@@ -153,7 +136,6 @@ namespace VContainer
             {
                 var registrationBuilder = registrationBuilders[i];
                 var registration = registrationBuilder.Build();
-                Diagnostics?.TraceBuild(registrationBuilder, registration);
                 registrations[i] = registration;
             }
 #endif
@@ -173,7 +155,6 @@ namespace VContainer
         protected void EmitCallbacks(IObjectResolver container)
         {
             buildCallback?.Invoke(container);
-            Diagnostics?.NotifyContainerBuilt(container);
         }
     }
 }

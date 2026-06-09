@@ -12,7 +12,6 @@ namespace VContainer
         {
             var registry = BuildRegistry();
             var container = new ScopedContainer(registry, root, parent, ApplicationOrigin, sharedInstances);
-            container.Diagnostics = Diagnostics;
             EmitCallbacks(container);
             return container;
         }
@@ -25,7 +24,6 @@ namespace VContainer
         {
             var registry = BuildRegistry();
             var container = new Container(registry, ApplicationOrigin, sharedInstances);
-            container.Diagnostics = Diagnostics;
             EmitCallbacks(container);
             return container;
         }
