@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace VContainer
 {
-    public interface IContainerBuilder
+    public partial interface IContainerBuilder
     {
         object ApplicationOrigin { get; set; }
         int Count { get; }
@@ -87,6 +87,7 @@ namespace VContainer
         public T Register<T>(T registrationBuilder) where T : RegistrationBuilder
         {
             registrationBuilders.Add(registrationBuilder);
+            IsDirty = true;
             return registrationBuilder;
         }
 
@@ -148,6 +149,7 @@ namespace VContainer
             var registry = Registry.Build(registrations);
             TypeAnalyzer.CheckCircularDependency(registrations, registry);
 
+            IsDirty = false;
             return registry;
         }
 

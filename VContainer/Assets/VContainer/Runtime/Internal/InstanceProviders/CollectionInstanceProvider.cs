@@ -58,7 +58,8 @@ namespace VContainer.Internal
             {
                 if (x.Lifetime == Lifetime.Singleton && x.ImplementationType == registration.ImplementationType && x.Key == registration.Key)
                 {
-                    throw new VContainerException(registration.ImplementationType, $"Conflict implementation type : {registration}");
+                    // throw new VContainerException(registration.ImplementationType, $"Conflict implementation type : {registration}");
+                    return;
                 }
             }
             registrations.Add(registration);

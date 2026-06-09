@@ -3,6 +3,11 @@ using System.Runtime.CompilerServices;
 
 namespace VContainer
 {
+    public partial interface IContainerBuilder
+    {
+        bool IsDirty { get; }
+    }
+    
     public sealed partial class ScopedContainerBuilder
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -19,6 +24,8 @@ namespace VContainer
     
     public partial class ContainerBuilder
     {
+        public bool IsDirty { get; protected set; } = true;
+        
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public virtual IObjectResolver Build(Dictionary<Registration, object> sharedInstances)
         {
